@@ -1,0 +1,158 @@
+C51 COMPILER V9.54   GPUORDER                                                              12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE GPUORDER
+OBJECT MODULE PLACED IN gpuOrder.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE gpuOrder.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEX
+                    -TEND TABS(2)
+
+line level    source
+
+   1          #include "gpuOrder.h"
+   2          #include "value.h"
+   3          /*===============gpuOrder.c==================
+   4            串口屏指令字符串配置
+   5            需要使用配套的上位机软件设置串口屏工程文件。
+   6          ============================================*/
+   7          u8* gpuStr_MainMenu = "SPG(34);\r\n";
+   8          u8* gpuStr_PlayMenu = "SPG(35);\r\n";
+   9          u8* gpuStr_ModeMenu = "PIC(0,0,12);\r\n";
+  10          u8* gpuStr_SelectMenu = "PIC(0,0,28);PS16(3,109,41,'--',15);\r\n";
+  11          u8* gpuStr_ModeConfig = "PIC(0,0,19);\r\n";
+  12          u8* gpuStr_ModeAbout = "PIC(0,0,32);\r\n";
+  13          
+  14          u8 gpuStr_Voice0[] = "ICON(320,13,4,2,1,1);PS24(1,350,15,'0% ',15);\r\n";//0:36
+  15          u8 gpuStr_Voice[] = "ICON(320,13,4,2,1,0);PS24(1,350,15,'0% ',15);\r\n";//0:36
+  16          u8 gpuStr_totalSec[] = "PS16(1,348,176,'00:00',15);\r\n";//暂停！选中 0:17
+  17          u8 gpuStr_CrrSec[] = "PS16(1,298,176,'00:00/',15);PIC(12,175,11);PIC(015,175,5);\r\n";//暂停！选中 0:17 15
+             --285
+  18          u8 gpuStr_CrrSort[] = "PS16(1,26,37,'00',15);PS16(1,50,37,'......~.mp3',15);\r\n";//暂停！选中 0:17 15-285
+  19          
+  20          u8* gpuStr_P1S[] = {"SPG(36);\r\n","SPG(37);\r\n","SPG(38);\r\n","SPG(39);\r\n","SPG(40);\r\n","SPG(41);\r
+             -\n","SPG(42);\r\n", "SPG(43);\r\n"};
+  21          u8* gpuStr_P0S[] = {"SPG(47);\r\n","SPG(48);\r\n","SPG(49);\r\n","SPG(50);\r\n","SPG(51);\r\n","SPG(52);\r
+             -\n","SPG(53);\r\n", "SPG(54);\r\n"};
+  22          u8* gpuStr_mainMenuIcon[] = {"ICON(37,148,18,6,1,0);","ICON(37,148,18,6,1,1);","ICON(325,60,18,6,1,2);\r\n
+             -","ICON(325,60,18,6,1,3);\r\n","ICON(325,60,18,6,1,4);\r\n","ICON(325,60,18,6,1,5);\r\n"};
+  23          
+  24          
+  25          
+  26          u8* GpuStr_setSortandName(){
+  27   1        gpuStr_CrrSort[14] = v_Crrsort/10 + 0x30;
+  28   1        gpuStr_CrrSort[15] = v_Crrsort%10 + 0x30;
+  29   1        
+  30   1        gpuStr_CrrSort[36] = v_song_name[0];
+  31   1        gpuStr_CrrSort[37] = v_song_name[1];
+  32   1        gpuStr_CrrSort[38] = v_song_name[2];
+  33   1        gpuStr_CrrSort[39] = v_song_name[3];
+  34   1        gpuStr_CrrSort[40] = v_song_name[4];
+  35   1        gpuStr_CrrSort[41] = v_song_name[5];
+  36   1        gpuStr_CrrSort[44] = v_song_name[6];
+  37   1        gpuStr_CrrSort[45] = v_song_name[7];
+  38   1        gpuStr_CrrSort[46] = v_song_name[8];
+  39   1        
+  40   1        return gpuStr_CrrSort;
+  41   1      }
+  42          u8* GpuStr_SongNumRepaint(u8 a){
+  43   1        u8 command[] = "PS16(3,109,41,'--',15);\r\n";
+  44   1        if(!(a/10)){
+  45   2          command[15]=' ';
+  46   2          command[16]=a%10+0x30;
+  47   2        }else{
+  48   2          command[15]=a/10+0x30;
+  49   2          command[16]=a%10+0x30;
+  50   2        }
+C51 COMPILER V9.54   GPUORDER                                                              12/28/2020 22:36:27 PAGE 2   
+
+  51   1        return command;
+  52   1      }
+  53          u8* GpuStr_MenuSelect(u8 a){
+  54   1        u8 command[] = "W8SE(0);SBC(0);\r\n";
+  55   1        command[5]=a;
+  56   1        return command;
+  57   1      }
+  58          u8* GpuStr_ConfigSelect(u8 a,u8 b,u8 c){
+  59   1        u8 command[] = "ICON(106,50,34,1,14,x);ICON(106,85,34,1,14,x);ICON(106,120,34,1,14,xx);\r\n";
+  60   1        command[20] = a + 0x30;
+  61   1        command[43] = b + 0x30;
+  62   1        command[67] = c/10 + 0x30;
+  63   1        command[68] = c%10 + 0x30;
+  64   1        return command;
+  65   1      }
+  66          u8* GpuStr_selectSelect(u8 a){
+  67   1        u8 command[] = "PIC(165,140,31);\r\n";
+  68   1        command[13] = a + 0x30;
+  69   1        return command;
+  70   1      }
+  71          u8* GpuStr_ModeSelect(u8 a){
+  72   1        u8 command[] = "PIC(83,45,13);\r\n";
+  73   1        command[11]=a+3+0x30;
+  74   1        return command;
+  75   1      }
+  76          u8* GpuStr_menuSelectSongSort(u8 a){
+  77   1        u8 command[] = "ISTR(164,90,29,'08');\r\n";
+  78   1        command[16]=a/10+0x30;
+  79   1        command[17]=a%10+0x30;
+  80   1        return command;
+  81   1      }
+  82          u8* GpuStr_MainIconShow(u8 kind){
+  83   1        return gpuStr_mainMenuIcon[kind];
+  84   1      }
+  85          u8* GpuStr_MenuPlaySelect(u8 a){
+  86   1        
+  87   1        if(!v_PP){
+  88   2          return gpuStr_P1S[a];
+  89   2        }else{
+  90   2          return gpuStr_P0S[a];
+  91   2        }
+  92   1      }
+  93          u8* GpuStr_setVoice(){
+  94   1        if(v_song_volume == 0)
+  95   1          return gpuStr_Voice0;
+  96   1        else{
+  97   2          gpuStr_Voice[36] = v_song_volume/3*10/10 + 0x30;
+  98   2          gpuStr_Voice[37] = '0';
+  99   2          gpuStr_Voice[38] = '%';
+ 100   2          return gpuStr_Voice;
+ 101   2        }
+ 102   1        
+ 103   1      }
+ 104          u8* GpuStr_setTotalSec(){
+ 105   1        gpuStr_totalSec[16] = v_timeSec_total/60/10 + 0x30;
+ 106   1        gpuStr_totalSec[17] = v_timeSec_total/60%10 + 0x30;
+ 107   1        gpuStr_totalSec[19] = v_timeSec_total%60/10 + 0x30;
+ 108   1        gpuStr_totalSec[20] = v_timeSec_total%60%10 + 0x30;
+ 109   1        return gpuStr_totalSec;
+ 110   1      }
+ 111          
+ 112          u8* GpuStr_setCrrSec(){
+C51 COMPILER V9.54   GPUORDER                                                              12/28/2020 22:36:27 PAGE 3   
+
+ 113   1        unsigned short a;
+ 114   1        gpuStr_CrrSec[16] = v_timeSec_now/60/10 + 0x30;
+ 115   1        gpuStr_CrrSec[17] = v_timeSec_now/60%10 + 0x30;
+ 116   1        gpuStr_CrrSec[19] = v_timeSec_now%60/10 + 0x30;
+ 117   1        gpuStr_CrrSec[20] = v_timeSec_now%60%10 + 0x30;
+ 118   1        
+ 119   1        a = 15+(float)v_timeSec_now/(float)v_timeSec_total*270;
+ 120   1      
+ 121   1        gpuStr_CrrSec[47] = a/100 + 0x30;
+ 122   1        gpuStr_CrrSec[48] = a/10%10 + 0x30;
+ 123   1        gpuStr_CrrSec[49] = a%10 + 0x30;
+ 124   1        return gpuStr_CrrSec;
+ 125   1      }
+ 126          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    903    ----
+   CONSTANT SIZE    =    605    ----
+   XDATA SIZE       =    327     186
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,46 @@
+C51 COMPILER V9.54   SHAKE                                                                 12/28/2020 22:36:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE SHAKE
+OBJECT MODULE PLACED IN shake.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE shake.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          /*=============shake.c================
+   2            摇晃切歌处理，外部中断1
+   3          ====================================*/
+   4          #include <STC12C5A60S2.h>
+   5          #include "shake.h"
+   6          #include "value.h"
+   7          #include "delay.h"
+   8          
+   9          void ShakeInterrupt() interrupt 2{
+  10   1        if(!v_SK)
+  11   1          return;
+  12   1        if(IN0 == 0 && canShake){
+  13   2          shakeNext = 1;
+  14   2          canShake = 0;
+  15   2          hasShaken = 1;
+  16   2        }
+  17   1        
+  18   1      }  
+  19          void shake_Init(){
+  20   1        EX1 = 1;
+  21   1        IT1 = 1;
+  22   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     49    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,73 @@
+C51 COMPILER V9.54   DELAY                                                                 12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN delay.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE delay.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          #include <intrins.h>
+   2          #include "delay.h"
+   3          #include "value.h"
+   4          void DelaySend(u8 ifName){
+   5   1        unsigned char i, j, k;//根据BY8001-16P语音模块说明书，将两条指令间隔在20ms以上
+   6   1        if(ifName){//更新名字间隔400ms
+   7   2          i = 17;
+   8   2          j = 208;
+   9   2          k = 27;
+  10   2          do
+  11   2          {
+  12   3            do
+  13   3            {
+  14   4              while (--k);
+  15   4            } while (--j);
+  16   3          } while (--i);
+  17   2        }else{//其他数据间隔50ms
+  18   2          i = 5;
+  19   2          j = 52;
+  20   2          k = 195;
+  21   2          do
+  22   2          {
+  23   3            do
+  24   3            {
+  25   4              while (--k);
+  26   4            } while (--j);
+  27   3          } while (--i);
+  28   2        }
+  29   1      }
+  30          void Delay20ms(){   //@11.0592MHz
+  31   1        unsigned char i, j, k;
+  32   1        _nop_();
+  33   1        _nop_();
+  34   1        i = 1;
+  35   1        j = 216;
+  36   1        k = 35;
+  37   1        do
+  38   1        {
+  39   2          do
+  40   2          {
+  41   3            while (--k);
+  42   3          } while (--j);
+  43   2        } while (--i);
+  44   1      }
+  45          void WaitGpuDone(){
+  46   1        while(Usart_BUSY);
+  47   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     48    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   DELAY                                                                 12/28/2020 22:36:27 PAGE 2   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

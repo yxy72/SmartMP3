@@ -1,0 +1,88 @@
+C51 COMPILER V9.54   UART                                                                  12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN Uart.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE Uart.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND
+                    - TABS(2)
+
+line level    source
+
+   1          /*=============Uart.c=================
+   2            串口相关
+   3          ====================================*/
+   4          #include <STC12C5A60S2.h>
+   5          #include "Uart.h"
+   6          #include "value.h"
+   7          void Uart_init(){
+   8   1        TMOD |= 0X20;   //T1  方式2  ，8位   自动重装   
+   9   1        TH1=0Xfd;
+  10   1        TL1=0Xfd;     //9600
+  11   1        TR1=1;      // 定时器1启动  
+  12   1        SM0=0;      // 设置串口的工作模式
+  13   1        SM1=1;      // 方式1
+  14   1        REN=1;      // 允许串口接收数据    
+  15   1        ES=1;       // 串口中断应许 
+  16   1      }
+  17          void uart_rx() interrupt 4 using 3{  
+  18   1        EA=0; 
+  19   1        if((RsPoint<RsBuf_N)&&RI){ 
+  20   2          RI=0;
+  21   2          if(SBUF=='O')
+  22   2            RsPoint=0;
+  23   2          RsBuf[RsPoint++]=SBUF;
+  24   2        }
+  25   1        EA=1;
+  26   1      }
+  27          
+  28          void SendASC(unsigned char d){
+  29   1        SBUF=d;
+  30   1        while(!TI);
+  31   1        TI=0;
+  32   1      }
+  33          void SendOrder(unsigned char *str){
+  34   1        while(*str!=0xff){
+  35   2          SendASC(*str) ;
+  36   2          str++;
+  37   2        }
+  38   1      }
+  39          void Uart2_init(){                //9600bps@11.0592MHz      
+  40   1        AUXR |= 0x08;                //使能波特率倍速位S2SMOD：（波特率加倍）
+  41   1        S2CON = 0x50;                //8位数据,可变波特率
+  42   1        AUXR &= 0xFB;                //独立波特率发生器时钟为Fosc/12,即12T      
+  43   1        BRT = 0xFA;                //设定独立波特率发生器重装值     
+  44   1        AUXR |= 0x10;                //启动独立波特率发生器
+  45   1      }
+  46          
+  47          
+  48          void Uart2_SendASC(unsigned char date){//自己改下名称 不要一样
+  49   1      
+  50   1        S2BUF=date;
+  51   1        while((S2CON&0X02)==0);
+  52   1        S2CON&=~0X02;              //清除发送标志位
+  53   1      
+  54   1      }
+C51 COMPILER V9.54   UART                                                                  12/28/2020 22:36:27 PAGE 2   
+
+  55          
+  56          void Uart2_SendOrder(unsigned char *p){   //串口2发送一个字符串
+  57   1        while(*p!='\0'){
+  58   2          Uart2_SendASC(*p);
+  59   2          p++;
+  60   2        }
+  61   1      }
+  62          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    159    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

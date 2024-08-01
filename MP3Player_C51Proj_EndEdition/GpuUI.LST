@@ -1,0 +1,831 @@
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE GPUUI
+OBJECT MODULE PLACED IN GpuUI.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE GpuUI.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          /*============GpuUI.c===============
+   2            菜单UI界面生成
+   3          ====================================*/
+   4          #include <STC12C5A60S2.h>
+   5          #include "mp3Order.h"
+   6          #include "value.h"
+   7          #include "operation.h"
+   8          #include "GpuUI.h"
+   9          #include "gpuOrder.h"
+  10          #define u8 unsigned char
+  11          
+  12          void ProcessKEY_IR(u8 KEY_IR){
+  13   1        IRProcessOK = 0;
+  14   1        //menu_main, menu_play, menu_select, menu_mode, menu_config,menu_about
+  15   1        switch(menuMode){
+  16   2          case menu_main:
+  17   2            if(!KEY_IR){
+  18   3              /*====================================
+  19   3                主菜单MenuMain 按键
+  20   3              ====================================*/
+  21   3              switch(Key_Option){
+  22   4                case up:
+  23   4                case down:
+  24   4                  select6_mainMenu = (select6_mainMenu+3)%6;
+  25   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+  26   4                  break;
+  27   4                case left:
+  28   4                  select6_mainMenu = (select6_mainMenu+5)%6;
+  29   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+  30   4                  break;
+  31   4                case right:
+  32   4                  select6_mainMenu = (select6_mainMenu+1)%6;
+  33   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+  34   4                  break;
+  35   4                case confirm:
+  36   4                  switch(select6_mainMenu){
+  37   5                    case 0: menuMode = menu_play;//播放器
+  38   5                            GpuOrder(gpuStr_PlayMenu);                                                                 
+             -                                                     
+  39   5                            GpuOrder_menuPlaySelect(select8_playMenu);
+  40   5                            Update_Setting_Info(msg_vol); 
+  41   5                            GpuOrder_PlayAreaRepaint(volR);
+  42   5                            
+  43   5                    
+  44   5                            GpuOrder_PlayAreaRepaint(ppR);
+  45   5                            Update_Setting_Info(msg_total_time);
+  46   5                            GpuOrder_PlayAreaRepaint(timeAllR);
+  47   5                            Update_Setting_Info(msg_current_time);
+  48   5                            GpuOrder_PlayAreaRepaint(timeCurrentR);
+  49   5                            
+  50   5                            Update_Setting_Info(msg_crrSort);
+  51   5                            Update_songsName();
+  52   5                    
+  53   5                            GpuOrder_PlayAreaRepaint(crrSR_nameR);
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 2   
+
+  54   5                            currentTimePaint = 1;
+  55   5                      break;
+  56   5                    case 1: menuMode = menu_select;//歌曲选择
+  57   5                            GpuOrder(gpuStr_SelectMenu);  
+  58   5                            GpuOrder_menuSelectSelect(select2_SelectMenu);
+  59   5                            GpuOrder_menuSelectSongSort(songSort);
+  60   5                            Update_Setting_Info(msg_songs_num);
+  61   5                            GpuOrder_SongNumRepaint(v_songs_total);
+  62   5                      break;
+  63   5                    case 2: menuMode = menu_mode;//模式选择
+  64   5                            GpuOrder(gpuStr_ModeMenu);  
+  65   5                            GpuOrder_menuModeSelect(select4_modeMenu = playMode);
+  66   5                      break;
+  67   5                    case 3: if(v_silence){//静音
+  68   6                              v_silence = 0;
+  69   6                              if(tempVoice == 0)
+  70   6                                tempVoice = 15;
+  71   6                              v_song_volume = tempVoice;
+  72   6                              GpuOeder_MenuIconRepaint();
+  73   6                              setSongVoice(v_song_volume);
+  74   6                            }else{
+  75   6                              v_silence = 1;
+  76   6                              tempVoice = v_song_volume;
+  77   6                              v_song_volume = 0;
+  78   6                              GpuOeder_MenuIconRepaint();
+  79   6                              setSongVoice(0);
+  80   6                            }
+  81   5                            
+  82   5                      break;
+  83   5                    case 4: menuMode = menu_config;//设置面板
+  84   5                            GpuOrder(gpuStr_ModeConfig);  
+  85   5                            GpuOrder_menuConfigRepaint();
+  86   5                      break;
+  87   5                    case 5: menuMode = menu_about;//关于
+  88   5                            GpuOrder(gpuStr_ModeAbout);  
+  89   5                      break;
+  90   5                    
+  91   5                  }
+  92   4                  break;
+  93   4              }
+  94   3            }else{
+  95   3              /*====================================
+  96   3                主菜单MenuMain 红外
+  97   3              ====================================*/
+  98   3              switch(IR_Option){
+  99   4                case irUp:
+ 100   4                case irdown:
+ 101   4                  select6_mainMenu = (select6_mainMenu+3)%6;
+ 102   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 103   4                  break;
+ 104   4                case irLeft:
+ 105   4                  select6_mainMenu = (select6_mainMenu+5)%6;
+ 106   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 107   4                  break;
+ 108   4                case irRight:
+ 109   4                  select6_mainMenu = (select6_mainMenu+1)%6;
+ 110   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 111   4                  break;
+ 112   4                case irPP:
+ 113   4                  if(playReachEnd2){
+ 114   5                    playReachEnd2 = 0;v_timeSec_now = 0;MP3Order(play);
+ 115   5                    v_PP = 1;
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 3   
+
+ 116   5                    IRProcessOK = 1; return;
+ 117   5                  }
+ 118   4                  v_PP = !v_PP;
+ 119   4                  if(!v_PP)
+ 120   4                    MP3Order(pause);
+ 121   4                  else
+ 122   4                    MP3Order(play);
+ 123   4                  break;
+ 124   4                case irOK:
+ 125   4                  switch(select6_mainMenu){
+ 126   5                    case 0: menuMode = menu_play;//播放器
+ 127   5                            GpuOrder(gpuStr_PlayMenu);                                                                 
+             -                                                     
+ 128   5                            GpuOrder_menuPlaySelect(select8_playMenu);
+ 129   5                            Update_Setting_Info(msg_vol); 
+ 130   5                            GpuOrder_PlayAreaRepaint(volR);
+ 131   5                            
+ 132   5                    
+ 133   5                            GpuOrder_PlayAreaRepaint(ppR);
+ 134   5                            Update_Setting_Info(msg_total_time);
+ 135   5                            GpuOrder_PlayAreaRepaint(timeAllR);
+ 136   5                            Update_Setting_Info(msg_current_time);
+ 137   5                            GpuOrder_PlayAreaRepaint(timeCurrentR);
+ 138   5                            
+ 139   5                            Update_Setting_Info(msg_crrSort);
+ 140   5                            Update_songsName();
+ 141   5                            GpuOrder_PlayAreaRepaint(crrSR_nameR);
+ 142   5                            currentTimePaint = 1;
+ 143   5                      break;
+ 144   5                    case 1: menuMode = menu_select;//歌曲选择
+ 145   5                            GpuOrder(gpuStr_SelectMenu);  
+ 146   5                            GpuOrder_menuSelectSelect(select2_SelectMenu);
+ 147   5                            GpuOrder_menuSelectSongSort(songSort);
+ 148   5                            Update_Setting_Info(msg_songs_num);
+ 149   5                            GpuOrder_SongNumRepaint(v_songs_total);
+ 150   5                      break;
+ 151   5                    case 2: menuMode = menu_mode;//模式选择
+ 152   5                            GpuOrder(gpuStr_ModeMenu);  
+ 153   5                            GpuOrder_menuModeSelect(select4_modeMenu = playMode);
+ 154   5                      break;
+ 155   5                    case 3: if(v_silence){//静音
+ 156   6                              v_silence = 0;
+ 157   6                              if(tempVoice == 0)
+ 158   6                                tempVoice = 15;
+ 159   6                              v_song_volume = tempVoice;
+ 160   6                              GpuOeder_MenuIconRepaint();
+ 161   6                              setSongVoice(v_song_volume);
+ 162   6                            }else{
+ 163   6                              v_silence = 1;
+ 164   6                              tempVoice = v_song_volume;
+ 165   6                              v_song_volume = 0;
+ 166   6                              GpuOeder_MenuIconRepaint();
+ 167   6                              setSongVoice(0);
+ 168   6                            }
+ 169   5                      break;
+ 170   5                    case 4: menuMode = menu_config;//设置面板
+ 171   5                            GpuOrder(gpuStr_ModeConfig);  
+ 172   5                            GpuOrder_menuConfigRepaint();
+ 173   5                      break;
+ 174   5                    case 5: menuMode = menu_about;//关于
+ 175   5                            GpuOrder(gpuStr_ModeAbout);  
+ 176   5                      break;
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 4   
+
+ 177   5                  
+ 178   5                  }
+ 179   4                  break;
+ 180   4                
+ 181   4              }
+ 182   3            }
+ 183   2            break;
+ 184   2          
+ 185   2            
+ 186   2          
+ 187   2          case menu_play:
+ 188   2            if(!KEY_IR){
+ 189   3              /*====================================
+ 190   3                播放菜单PlayMenu 按键
+ 191   3              ====================================*/
+ 192   3              switch(Key_Option){
+ 193   4                case vol_m:
+ 194   4                  select8_playMenu = Key_Option - 1;
+ 195   4                  v_song_volume = v_song_volume-3;
+ 196   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 197   4                  if(v_song_volume<0)
+ 198   4                    v_song_volume = 0;
+ 199   4                  if(v_song_volume==0)
+ 200   4                    v_silence = 1;
+ 201   4                  GpuOrder_PlayAreaRepaint(volR);
+ 202   4                  setSongVoice(v_song_volume);
+ 203   4                  break;
+ 204   4                case ch_min:
+ 205   4                  v_PP = 1;
+ 206   4                  select8_playMenu = Key_Option - 1;
+ 207   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 208   4                  MP3Order(CH_Min);
+ 209   4                  GpuOrder_PlayAreaRepaint(nextSR);
+ 210   4                  break;
+ 211   4                case preT:
+ 212   4                  select8_playMenu = Key_Option - 1;
+ 213   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 214   4                  MP3Order(pre_Time);
+ 215   4                  Update_Setting_Info(msg_current_time);
+ 216   4                  break;
+ 217   4                case PP:
+ 218   4                  if(playReachEnd2){
+ 219   5                    playReachEnd2 = 0;v_timeSec_now = 0;
+ 220   5                    v_PP = 1;
+ 221   5                    select8_playMenu = Key_Option - 1;
+ 222   5                    GpuOrder_menuPlaySelect(select8_playMenu);
+ 223   5                    playEndNeedRepaint();
+ 224   5                    IRProcessOK = 1; return;
+ 225   5                  }
+ 226   4                
+ 227   4                  v_PP = !v_PP;
+ 228   4                  select8_playMenu = Key_Option - 1;
+ 229   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 230   4                  GpuOrder_PlayAreaRepaint(ppR);
+ 231   4                  GpuOrder_PlayAreaRepaint(PPR);
+ 232   4                  
+ 233   4      
+ 234   4                  break;
+ 235   4                case nextT:
+ 236   4                  select8_playMenu = Key_Option - 1;
+ 237   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 238   4                  MP3Order(next_Time);
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 5   
+
+ 239   4                  Update_Setting_Info(msg_current_time);
+ 240   4                  break;
+ 241   4                case ch_plus:
+ 242   4                  v_PP = 1;
+ 243   4                  select8_playMenu = Key_Option - 1;
+ 244   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 245   4                  MP3Order(CH_Plus);
+ 246   4                  GpuOrder_PlayAreaRepaint(nextSR);
+ 247   4                  break;
+ 248   4                case vol_p:
+ 249   4                  select8_playMenu = Key_Option - 1;
+ 250   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 251   4                  v_song_volume = v_song_volume+3;
+ 252   4                  if(v_song_volume>30)
+ 253   4                    v_song_volume = 30;
+ 254   4                  if(v_song_volume>0)
+ 255   4                    v_silence = 0;
+ 256   4                  GpuOrder_PlayAreaRepaint(volR);
+ 257   4                  setSongVoice(v_song_volume);
+ 258   4                  
+ 259   4                  break;
+ 260   4                case Return:
+ 261   4                  menuMode = menu_main;
+ 262   4                  GpuOrder(gpuStr_MainMenu);
+ 263   4                  GpuOeder_MenuIconRepaint();
+ 264   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 265   4                  currentTimePaint = 0;
+ 266   4                  break;
+ 267   4              }
+ 268   3            
+ 269   3            
+ 270   3      
+ 271   3            }else{
+ 272   3              /*====================================
+ 273   3                播放菜单PlayMenu 红外
+ 274   3              ====================================*/
+ 275   3              switch(IR_Option){
+ 276   4                case irPP:
+ 277   4                  if(playReachEnd2){
+ 278   5                    playReachEnd2 = 0;v_timeSec_now = 0;
+ 279   5                    v_PP = 1;
+ 280   5                    playEndNeedRepaint();
+ 281   5                    IRProcessOK = 1; return;
+ 282   5                  }
+ 283   4                  v_PP = !v_PP;
+ 284   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 285   4                  GpuOrder_PlayAreaRepaint(ppR);
+ 286   4                  GpuOrder_PlayAreaRepaint(PPR);
+ 287   4                  break;
+ 288   4                case irUp:
+ 289   4                case irLeft:
+ 290   4                  select8_playMenu = (select8_playMenu+7)%8;
+ 291   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 292   4                  break;
+ 293   4                case irRight:
+ 294   4                case irdown:
+ 295   4                  select8_playMenu = (select8_playMenu+1)%8;
+ 296   4                  GpuOrder_menuPlaySelect(select8_playMenu);
+ 297   4                  break;
+ 298   4                case irOK:
+ 299   4                  
+ 300   4                  switch(select8_playMenu){
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 6   
+
+ 301   5                    case 0:
+ 302   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 303   5                      v_song_volume = v_song_volume-3;
+ 304   5                      if(v_song_volume<0)
+ 305   5                        v_song_volume = 0;
+ 306   5                      if(v_song_volume==0)
+ 307   5                        v_silence = 1;
+ 308   5                      GpuOrder_PlayAreaRepaint(volR);
+ 309   5                      setSongVoice(v_song_volume);
+ 310   5                      break;
+ 311   5                    case 1:
+ 312   5                      v_PP = 1;
+ 313   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 314   5                      MP3Order(CH_Min);
+ 315   5                      GpuOrder_PlayAreaRepaint(nextSR);
+ 316   5                      break;
+ 317   5                    case 2:
+ 318   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 319   5                      MP3Order(pre_Time);
+ 320   5                      Update_Setting_Info(msg_current_time);
+ 321   5                      break;
+ 322   5                    case 3:
+ 323   5                      if(playReachEnd2){
+ 324   6                        playReachEnd2 = 0;v_timeSec_now = 0;
+ 325   6                        v_PP = 1;
+ 326   6                        playEndNeedRepaint();
+ 327   6                        IRProcessOK = 1; return;
+ 328   6                      }
+ 329   5                      v_PP = !v_PP;
+ 330   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 331   5                      GpuOrder_PlayAreaRepaint(ppR);
+ 332   5                      GpuOrder_PlayAreaRepaint(PPR);
+ 333   5      
+ 334   5                      break;
+ 335   5                    case 4:
+ 336   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 337   5                      MP3Order(next_Time);
+ 338   5                      Update_Setting_Info(msg_current_time);
+ 339   5                      break;
+ 340   5                    case 5:
+ 341   5                      v_PP = 1;
+ 342   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 343   5                      MP3Order(CH_Plus);
+ 344   5                      GpuOrder_PlayAreaRepaint(nextSR);
+ 345   5                      break;
+ 346   5                    case 6:
+ 347   5                      GpuOrder_menuPlaySelect(select8_playMenu);
+ 348   5                      v_song_volume = v_song_volume+3;
+ 349   5                      if(v_song_volume>30)
+ 350   5                        v_song_volume = 30;
+ 351   5                      if(v_song_volume>0)
+ 352   5                        v_silence = 0;
+ 353   5                      GpuOrder_PlayAreaRepaint(volR);
+ 354   5                      setSongVoice(v_song_volume);
+ 355   5                      break;
+ 356   5                    case 7:
+ 357   5                      menuMode = menu_main;
+ 358   5                      GpuOrder(gpuStr_MainMenu);
+ 359   5                      GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 360   5                      currentTimePaint = 0;
+ 361   5                      GpuOeder_MenuIconRepaint();
+ 362   5                      break;  
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 7   
+
+ 363   5                  }
+ 364   4                  break;
+ 365   4                case irReturn:
+ 366   4                  menuMode = menu_main;
+ 367   4                  GpuOrder(gpuStr_MainMenu);
+ 368   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 369   4                  currentTimePaint = 0;
+ 370   4                  GpuOeder_MenuIconRepaint();
+ 371   4                  break;
+ 372   4              }
+ 373   3            }
+ 374   2            break;
+ 375   2          
+ 376   2          
+ 377   2          
+ 378   2            
+ 379   2          case menu_mode:
+ 380   2            if(!KEY_IR){
+ 381   3              /*====================================
+ 382   3                模式选择菜单ModeMenu 按键
+ 383   3              ====================================*/
+ 384   3              switch(Key_Option){
+ 385   4                case preT://上箭头
+ 386   4                  select4_modeMenu = (select4_modeMenu+3)%4;
+ 387   4                  GpuOrder_menuModeSelect(select4_modeMenu);
+ 388   4                  break;
+ 389   4                case nextT://下箭头
+ 390   4                  select4_modeMenu = (select4_modeMenu+1)%4;
+ 391   4                  GpuOrder_menuModeSelect(select4_modeMenu);
+ 392   4                  break;
+ 393   4                case confirm:
+ 394   4                  playMode = select4_modeMenu;
+ 395   4                  menuMode = menu_main;
+ 396   4                  GpuOrder(gpuStr_MainMenu);
+ 397   4                  GpuOeder_MenuIconRepaint();
+ 398   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 399   4                  if(playMode == 0)
+ 400   4                    setPlayMode(4);
+ 401   4                  else if(playMode == 1)
+ 402   4                    setPlayMode(2);
+ 403   4                  else if(playMode == 2)
+ 404   4                    setPlayMode(1);
+ 405   4                  else if(playMode == 3)
+ 406   4                    setPlayMode(3);
+ 407   4                  break;
+ 408   4                case Return:
+ 409   4                  menuMode = menu_main;
+ 410   4                  GpuOrder(gpuStr_MainMenu);
+ 411   4                  GpuOeder_MenuIconRepaint();
+ 412   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 413   4                  break;
+ 414   4              }
+ 415   3            }else{
+ 416   3              /*====================================
+ 417   3                模式选择菜单ModeMenu 红外
+ 418   3              ====================================*/
+ 419   3              switch(IR_Option){
+ 420   4                case irPP:
+ 421   4                  if(playReachEnd2){
+ 422   5                    playReachEnd2 = 0;v_timeSec_now = 0;MP3Order(play);
+ 423   5                    v_PP = 1;
+ 424   5                    IRProcessOK = 1; return;
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 8   
+
+ 425   5                  }
+ 426   4                  v_PP = !v_PP;
+ 427   4                  if(!v_PP)
+ 428   4                    MP3Order(pause);
+ 429   4                  else
+ 430   4                    MP3Order(play);
+ 431   4                  break;
+ 432   4                case irUp:
+ 433   4                case irLeft:
+ 434   4                  select4_modeMenu = (select4_modeMenu+3)%4;
+ 435   4                  GpuOrder_menuModeSelect(select4_modeMenu);
+ 436   4                  break;
+ 437   4                case irdown:
+ 438   4                case irRight:
+ 439   4                  select4_modeMenu = (select4_modeMenu+1)%4;
+ 440   4                  GpuOrder_menuModeSelect(select4_modeMenu);
+ 441   4                  break;
+ 442   4                case irOK:
+ 443   4                  playMode = select4_modeMenu;
+ 444   4                  menuMode = menu_main;
+ 445   4                  GpuOrder(gpuStr_MainMenu);
+ 446   4                  GpuOeder_MenuIconRepaint();
+ 447   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 448   4                  if(playMode == 0)
+ 449   4                    setPlayMode(4);
+ 450   4                  else if(playMode == 1)
+ 451   4                    setPlayMode(2);
+ 452   4                  else if(playMode == 2)
+ 453   4                    setPlayMode(1);
+ 454   4                  else if(playMode == 3)
+ 455   4                    setPlayMode(3);
+ 456   4                  break;
+ 457   4                case irReturn:
+ 458   4                  menuMode = menu_main;
+ 459   4                  GpuOrder(gpuStr_MainMenu);
+ 460   4                  GpuOeder_MenuIconRepaint();
+ 461   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 462   4                  break;
+ 463   4              }
+ 464   3            }
+ 465   2            break;
+ 466   2          
+ 467   2          
+ 468   2          
+ 469   2          case menu_config:
+ 470   2            if(!KEY_IR){
+ 471   3              /*====================================
+ 472   3                设置菜单ConfigMenu 按键
+ 473   3              ====================================*/
+ 474   3              switch(Key_Option){
+ 475   4                case preT://上箭头
+ 476   4                  select3_ConfMenu = (select3_ConfMenu+2)%3;
+ 477   4                  GpuOrder_menuConfigRepaint();
+ 478   4                  break;
+ 479   4                case nextT://下箭头
+ 480   4                  select3_ConfMenu = (select3_ConfMenu+1)%3;
+ 481   4                  GpuOrder_menuConfigRepaint();
+ 482   4                  break;
+ 483   4                case confirm:
+ 484   4                  if(select3_ConfMenu==0)
+ 485   4                    v_IR = !v_IR;
+ 486   4                  else if(select3_ConfMenu==1){
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 9   
+
+ 487   5                    v_SK = !v_SK;
+ 488   5                    if(v_SK){
+ 489   6                      canShake = 0;
+ 490   6                      hasShaken = 1;//上电延时，否则切歌
+ 491   6                    }
+ 492   5                    SK_VCC = !SK_VCC;
+ 493   5                    
+ 494   5                  }else if(select3_ConfMenu==2){
+ 495   5                    if(ledMode==0)
+ 496   5                      ledMode = 1;
+ 497   5                    else if(ledMode==1)
+ 498   5                      ledMode = 2;
+ 499   5                    else if(ledMode==2)
+ 500   5                      ledMode = 0;
+ 501   5                    }
+ 502   4                  GpuOrder_menuConfigRepaint();
+ 503   4                  break;
+ 504   4                case Return:
+ 505   4                  menuMode = menu_main;
+ 506   4                  GpuOrder(gpuStr_MainMenu);
+ 507   4                  GpuOeder_MenuIconRepaint();
+ 508   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 509   4                  break;
+ 510   4              }
+ 511   3            }else{
+ 512   3              /*====================================
+ 513   3                设置菜单ConfigMenu 红外
+ 514   3              ====================================*/
+ 515   3              switch(IR_Option){
+ 516   4                case irPP:
+ 517   4                  if(playReachEnd2){
+ 518   5                    playReachEnd2 = 0;v_timeSec_now = 0;MP3Order(play);
+ 519   5                    v_PP = 1;
+ 520   5                    IRProcessOK = 1; return;
+ 521   5                  }
+ 522   4                  v_PP = !v_PP;
+ 523   4                  if(!v_PP)
+ 524   4                    MP3Order(pause);
+ 525   4                  else
+ 526   4                    MP3Order(play);
+ 527   4                  break;
+ 528   4                case irUp:
+ 529   4                case irLeft:
+ 530   4                  select3_ConfMenu = (select3_ConfMenu+2)%3;
+ 531   4                  GpuOrder_menuConfigRepaint();
+ 532   4                  break;
+ 533   4                case irdown:
+ 534   4                case irRight:
+ 535   4                  select3_ConfMenu = (select3_ConfMenu+1)%3;
+ 536   4                  GpuOrder_menuConfigRepaint();
+ 537   4                  break;
+ 538   4                case irOK:
+ 539   4                  if(select3_ConfMenu==0)
+ 540   4                    v_IR = !v_IR;
+ 541   4                  else if(select3_ConfMenu==1){
+ 542   5                    v_SK = !v_SK;
+ 543   5                    if(v_SK){
+ 544   6                      canShake = 0;
+ 545   6                      hasShaken = 1;//上电延时，否则切歌
+ 546   6                    }
+ 547   5                    SK_VCC = !SK_VCC;
+ 548   5                  }
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 10  
+
+ 549   4                  else if(select3_ConfMenu==2){
+ 550   5                    if(ledMode==0)
+ 551   5                      ledMode = 1;
+ 552   5                    else if(ledMode==1)
+ 553   5                      ledMode = 2;
+ 554   5                    else if(ledMode==2)
+ 555   5                      ledMode = 0;
+ 556   5                    }
+ 557   4                  GpuOrder_menuConfigRepaint();
+ 558   4                  break;
+ 559   4                case irReturn:
+ 560   4                  menuMode = menu_main;
+ 561   4                  GpuOrder(gpuStr_MainMenu);
+ 562   4                  GpuOeder_MenuIconRepaint();
+ 563   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 564   4                  break;
+ 565   4              }
+ 566   3            }
+ 567   2            break;
+ 568   2          
+ 569   2          case menu_select:
+ 570   2            if(!KEY_IR){
+ 571   3              /*====================================
+ 572   3                歌曲选择菜单SelectMenu 按键
+ 573   3              ====================================*/
+ 574   3              switch(Key_Option){
+ 575   4                case preT://上箭头，数字-1
+ 576   4                  if(!select2_SelectMenu){
+ 577   5                    songSort = (((songSort/10-1)*10 + songSort%10)+100)%100;
+ 578   5                  }else{
+ 579   5                    if(songSort == 1)
+ 580   5                      songSort = 99;
+ 581   5                    else
+ 582   5                      songSort = (songSort-1+100)%100;
+ 583   5                  }
+ 584   4                  GpuOrder_menuSelectSongSort(songSort);
+ 585   4                  break;
+ 586   4                case nextT://下箭头，数字+1
+ 587   4                  if(!select2_SelectMenu){
+ 588   5                    songSort = ((songSort/10+1)*10 + songSort%10)%100;
+ 589   5                  }else{
+ 590   5                    if(songSort == 99)
+ 591   5                      songSort =1;
+ 592   5                    else
+ 593   5                      songSort = (songSort+1)%100;
+ 594   5                  }
+ 595   4                  GpuOrder_menuSelectSongSort(songSort);
+ 596   4                  break;
+ 597   4                case ch_min://左箭头
+ 598   4                case ch_plus://右箭头
+ 599   4                  select2_SelectMenu = (select2_SelectMenu+1)%2;
+ 600   4                  GpuOrder_menuSelectSelect(select2_SelectMenu);
+ 601   4                  break;
+ 602   4                case confirm:
+ 603   4                  playSongSort(songSort);
+ 604   4                  v_PP = 1;
+ 605   4                  break;
+ 606   4                case Return:
+ 607   4                  menuMode = menu_main;
+ 608   4                  GpuOrder(gpuStr_MainMenu);
+ 609   4                  GpuOeder_MenuIconRepaint();
+ 610   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 11  
+
+ 611   4                  break;
+ 612   4              }
+ 613   3            }else{
+ 614   3              /*====================================
+ 615   3                歌曲选择菜单SelectMenu 红外
+ 616   3              ====================================*/
+ 617   3              switch(IR_Option){
+ 618   4                case irPP:
+ 619   4                  if(playReachEnd2){
+ 620   5                    playReachEnd2 = 0;v_timeSec_now = 0;MP3Order(play);
+ 621   5                    v_PP = 1;
+ 622   5                    IRProcessOK = 1; return;
+ 623   5                  }
+ 624   4                  v_PP = !v_PP;
+ 625   4                  if(!v_PP)
+ 626   4                    MP3Order(pause);
+ 627   4                  else
+ 628   4                    MP3Order(play);
+ 629   4                  break;
+ 630   4                case irUp:
+ 631   4                  if(!select2_SelectMenu){
+ 632   5                    songSort = (((songSort/10-1)*10 + songSort%10)+100)%100;
+ 633   5                  }else{
+ 634   5                    if(songSort == 1)
+ 635   5                      songSort = 99;
+ 636   5                    else
+ 637   5                      songSort = (songSort-1+100)%100;
+ 638   5                  }
+ 639   4                  GpuOrder_menuSelectSongSort(songSort);
+ 640   4                  break;
+ 641   4                case irLeft:
+ 642   4                case irRight:
+ 643   4                  select2_SelectMenu = (select2_SelectMenu+1)%2;
+ 644   4                  GpuOrder_menuSelectSelect(select2_SelectMenu);
+ 645   4                  break;
+ 646   4                case irdown:
+ 647   4                  if(!select2_SelectMenu)
+ 648   4                    songSort = ((songSort/10+1)*10 + songSort%10)%100;
+ 649   4                  else
+ 650   4                    if(songSort == 99)
+ 651   4                      songSort =1;
+ 652   4                    else
+ 653   4                      songSort = (songSort+1)%100;
+ 654   4                  GpuOrder_menuSelectSongSort(songSort);
+ 655   4                  break;
+ 656   4                case num0:  
+ 657   4                  if(!select2_SelectMenu){
+ 658   5                    if(songSort%10)
+ 659   5                      songSort = songSort%10;
+ 660   5                  }else{
+ 661   5                    if(songSort/10)
+ 662   5                      songSort = (songSort/10)*10;
+ 663   5                  }
+ 664   4                  GpuOrder_menuSelectSongSort(songSort);
+ 665   4                  break;
+ 666   4                case num1:  
+ 667   4                  if(!select2_SelectMenu)
+ 668   4                    songSort = 10 + songSort%10;
+ 669   4                  else
+ 670   4                    songSort = songSort/10*10 + 1;
+ 671   4                  GpuOrder_menuSelectSongSort(songSort);
+ 672   4                  break;
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 12  
+
+ 673   4                case num2:  
+ 674   4                  if(!select2_SelectMenu)
+ 675   4                    songSort = 20 + songSort%10;
+ 676   4                  else
+ 677   4                    songSort = songSort/10*10 + 2;
+ 678   4                  GpuOrder_menuSelectSongSort(songSort);
+ 679   4                  break;
+ 680   4                case num3:  
+ 681   4                  if(!select2_SelectMenu)
+ 682   4                    songSort = 30 + songSort%10;
+ 683   4                  else
+ 684   4                    songSort = songSort/10*10 + 3;
+ 685   4                  GpuOrder_menuSelectSongSort(songSort);
+ 686   4                  break;
+ 687   4                case num4:  
+ 688   4                  if(!select2_SelectMenu)
+ 689   4                    songSort = 40 + songSort%10;
+ 690   4                  else
+ 691   4                    songSort = songSort/10*10 + 4;
+ 692   4                  GpuOrder_menuSelectSongSort(songSort);
+ 693   4                  break;
+ 694   4                case num5:  
+ 695   4                  if(!select2_SelectMenu)
+ 696   4                    songSort = 50 + songSort%10;
+ 697   4                  else
+ 698   4                    songSort = songSort/10*10 + 5;
+ 699   4                  GpuOrder_menuSelectSongSort(songSort);
+ 700   4                  break;
+ 701   4                case num6:  
+ 702   4                  if(!select2_SelectMenu)
+ 703   4                    songSort = 60 + songSort%10;
+ 704   4                  else
+ 705   4                    songSort = songSort/10*10 + 6;
+ 706   4                  GpuOrder_menuSelectSongSort(songSort);
+ 707   4                  break;
+ 708   4                case num7:  
+ 709   4                  if(!select2_SelectMenu)
+ 710   4                    songSort = 70 + songSort%10;
+ 711   4                  else
+ 712   4                    songSort = songSort/10*10 + 7;
+ 713   4                  GpuOrder_menuSelectSongSort(songSort);
+ 714   4                  break;
+ 715   4                case num8:  
+ 716   4                  if(!select2_SelectMenu)
+ 717   4                    songSort = 80 + songSort%10;
+ 718   4                  else
+ 719   4                    songSort = songSort/10*10 + 8;
+ 720   4                  GpuOrder_menuSelectSongSort(songSort);
+ 721   4                  break;
+ 722   4                case num9:  
+ 723   4                  if(!select2_SelectMenu)
+ 724   4                    songSort = 90 + songSort%10;
+ 725   4                  else
+ 726   4                    songSort = songSort/10*10 + 9;
+ 727   4                  GpuOrder_menuSelectSongSort(songSort);
+ 728   4                  break;
+ 729   4                case irOK:
+ 730   4                  playSongSort(songSort);
+ 731   4                  v_PP = 1;
+ 732   4                  break;
+ 733   4                case irReturn:
+ 734   4                  menuMode = menu_main;
+C51 COMPILER V9.54   GPUUI                                                                 12/28/2020 22:36:27 PAGE 13  
+
+ 735   4                  GpuOrder(gpuStr_MainMenu);
+ 736   4                  GpuOeder_MenuIconRepaint();
+ 737   4                  GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 738   4                  break;
+ 739   4              }
+ 740   3            }
+ 741   2            break;
+ 742   2          
+ 743   2          case menu_about:
+ 744   2            if(!KEY_IR){
+ 745   3              /*====================================
+ 746   3                关于About 按键
+ 747   3              ====================================*/
+ 748   3              if(Key_Option == Return){
+ 749   4                menuMode = menu_main;
+ 750   4                GpuOrder(gpuStr_MainMenu);
+ 751   4                GpuOeder_MenuIconRepaint();
+ 752   4                GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 753   4              }
+ 754   3            }else{
+ 755   3              /*====================================
+ 756   3                关于About 红外
+ 757   3              ====================================*/
+ 758   3              if(IR_Option == irReturn||IR_Option == irOK){
+ 759   4                menuMode = menu_main;
+ 760   4                GpuOrder(gpuStr_MainMenu);
+ 761   4                GpuOeder_MenuIconRepaint();
+ 762   4                GpuOrder_menuMainSelect(select6_mainMenu+1);
+ 763   4              }else if(IR_Option == irPP){
+ 764   4                  if(playReachEnd2){
+ 765   5                    playReachEnd2 = 0;v_timeSec_now = 0;MP3Order(play);
+ 766   5                    v_PP = 1;
+ 767   5                    IRProcessOK = 1; return;
+ 768   5                  }
+ 769   4                  v_PP = !v_PP;
+ 770   4                  if(!v_PP)
+ 771   4                    MP3Order(pause);
+ 772   4                  else
+ 773   4                    MP3Order(play);
+ 774   4                }
+ 775   3            }
+ 776   2            
+ 777   2            break;
+ 778   2        }
+ 779   1        IRProcessOK = 1;
+ 780   1        IR_Option = 127;
+ 781   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3355    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

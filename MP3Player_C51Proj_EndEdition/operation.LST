@@ -1,0 +1,525 @@
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE OPERATION
+OBJECT MODULE PLACED IN operation.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE operation.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTE
+                    -XTEND TABS(2)
+
+line level    source
+
+   1          /*===========operation.c==============
+   2            供调用接口函数
+   3          ====================================*/
+   4          #include <STC12C5A60S2.h>
+   5          #include "operation.h"
+   6          #include "value.h"
+   7          #include "shake.h"
+   8          #include "IR.h"
+   9          #include "mp3Order.h"
+  10          #include "gpuOrder.h"
+  11          #include "delay.h"
+  12          #include "Uart.h"
+  13          #include "LED.h"
+  14          /*====================================
+  15            全局初始化
+  16          ====================================*/
+  17          void InitAll(){
+  18   1        canShake = 0;
+  19   1        P0M1 |= 0x00;P0M0 |= 0x01;//由于要将P0^0作为SK的VCC，设置为大电流推挽输出。
+  20   1        shake_Init(); //先初始化一堆东西
+  21   1        Uart_init();
+  22   1        Uart2_init();
+  23   1        IRInit(); 
+  24   1        Init_PWM();
+  25   1        
+  26   1        EA = 1;
+  27   1        DelaySend(1); //再看一会标题界面
+  28   1        DelaySend(1);
+  29   1        DelaySend(1); 
+  30   1        
+  31   1        canShake = 1;
+  32   1        GpuOrder(gpuStr_MainMenu);  // 最后加载主菜单
+  33   1        GpuOrder_menuMainSelect(select6_mainMenu+1);
+  34   1        GpuOeder_MenuIconRepaint();
+  35   1        
+  36   1        setPlayMode(2);//设置模式为单曲循环
+  37   1      }
+  38          /*====================================
+  39            独立按键监测
+  40          ====================================*/
+  41          void keyScan(){
+  42   1        if(P20==0){
+  43   2          Delay20ms();
+  44   2          if(P20==0){
+  45   3            Key_Option = vol_m;
+  46   3            keyDone = 1;
+  47   3          }while(!P20);
+  48   2        }else if(P21==0){
+  49   2          Delay20ms();
+  50   2          if(P21==0){
+  51   3            Key_Option = ch_min;
+  52   3            keyDone = 1;
+  53   3          }while(!P21);
+  54   2        }else if(P22==0){
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 2   
+
+  55   2          Delay20ms();
+  56   2          if(P22==0){
+  57   3            Key_Option = preT;
+  58   3            keyDone = 1;
+  59   3          }while(!P22);
+  60   2        }else if(P23==0){
+  61   2          Delay20ms();
+  62   2          if(P23==0){
+  63   3            Key_Option = PP;
+  64   3            keyDone = 1;
+  65   3          }while(!P23);
+  66   2        }else if(P24==0){
+  67   2          Delay20ms();
+  68   2          if(P24==0){
+  69   3            Key_Option = nextT;
+  70   3            keyDone = 1;
+  71   3          }while(!P24);
+  72   2        }else if(P25==0){
+  73   2          Delay20ms();
+  74   2          if(P25==0){
+  75   3            Key_Option = ch_plus;
+  76   3            keyDone = 1;
+  77   3          }while(!P25);
+  78   2        }else if(P26==0){
+  79   2          Delay20ms();
+  80   2          if(P26==0){
+  81   3            Key_Option = vol_p;
+  82   3            keyDone = 1;
+  83   3          }while(!P26);
+  84   2        }else if(P27==0){
+  85   2          Delay20ms();
+  86   2          if(P27==0){
+  87   3            Key_Option = Return;
+  88   3            keyDone = 1;
+  89   3          }while(!P27);
+  90   2        }
+  91   1      }
+  92          /*====================================
+  93            播放到达尾声
+  94          ====================================*/
+  95          void playEndNeedRepaint(){
+  96   1        switch(playMode){
+  97   2          case 0:
+  98   2            currentSecPaint = 1;
+  99   2            MP3Order(play);GpuOrder_menuPlaySelect(select8_playMenu);
+ 100   2            GpuOrder_PlayAreaRepaint(ppR);
+ 101   2            break;
+ 102   2          case 1:
+ 103   2            break;
+ 104   2          case 2:
+ 105   2            break;
+ 106   2          case 3:
+ 107   2            break;
+ 108   2        
+ 109   2        }
+ 110   1      }
+ 111          
+ 112          /*====================================
+ 113            保存设置与歌曲信息于SBUF
+ 114          ====================================*/
+ 115          u8 acsiiToChar(u8 ascii){
+ 116   1        if(ascii>=0x30 && ascii<=0x39)
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 3   
+
+ 117   1          return (ascii - 0x30);
+ 118   1        else if(ascii>=0x41 && ascii<=0x46)
+ 119   1          return (ascii - 0x41 + 10);
+ 120   1        else if(ascii>=0x61 && ascii<=0x66)
+ 121   1          return (ascii - 0x61 + 10); 
+ 122   1        return '0';
+ 123   1      }
+ 124          u16 groupToDec(){//2cfd
+ 125   1        return acsiiToChar(RsBuf[2])*16*16*16 + acsiiToChar(RsBuf[3])*16*16 + acsiiToChar(RsBuf[4])*16 + acsiiToC
+             -har(RsBuf[5]);
+ 126   1      }
+ 127          void Save_Setting_Info(u8 kind){
+ 128   1        u16 decChar = groupToDec();
+ 129   1        switch(kind){
+ 130   2          case msg_vol:
+ 131   2            v_song_volume = decChar;//*10/3;
+ 132   2            break;
+ 133   2          case msg_songs_num:
+ 134   2            v_songs_total = decChar;
+ 135   2            break;
+ 136   2          case msg_current_time:
+ 137   2            v_timeSec_now = decChar;
+ 138   2            break;
+ 139   2          case msg_total_time:
+ 140   2            v_timeSec_total = decChar;
+ 141   2            break;
+ 142   2          case msg_crrSort:
+ 143   2            v_Crrsort = decChar;
+ 144   2            break;
+ 145   2        }
+ 146   1      }
+ 147          /*====================================
+ 148            获取设置与歌曲信息至SBUF
+ 149          ====================================*/
+ 150          void Seek_Setting_Info(u8 kind){
+ 151   1        //msg_vol, msg_songs_num, msg_current_time, msg_total_time, msg_song_name 
+ 152   1        switch(kind){
+ 153   2          case msg_vol:
+ 154   2            SendOrder(VOL);
+ 155   2            DelaySend(0);
+ 156   2            break;
+ 157   2          case msg_songs_num:
+ 158   2            SendOrder(tf_file_num);
+ 159   2            DelaySend(0);
+ 160   2            break;
+ 161   2          case msg_current_time:
+ 162   2            SendOrder(curr_time);
+ 163   2            DelaySend(0);
+ 164   2            break;
+ 165   2          case msg_total_time:
+ 166   2            SendOrder(total_time);
+ 167   2            DelaySend(0);
+ 168   2            break;
+ 169   2          case msg_crrSort:
+ 170   2            SendOrder(crrSort);
+ 171   2            DelaySend(0);
+ 172   2            break;
+ 173   2        }
+ 174   1      }
+ 175          /*====================================
+ 176            获取并保存 设置与歌曲信息
+ 177          ====================================*/
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 4   
+
+ 178          void Update_Setting_Info(u8 kind){
+ 179   1      
+ 180   1        Seek_Setting_Info(kind);
+ 181   1        Save_Setting_Info(kind);
+ 182   1      }
+ 183          void Update_songsName(){
+ 184   1        SendOrder(song_name);
+ 185   1        DelaySend(1);
+ 186   1        v_song_name[0] = RsBuf[2];
+ 187   1        v_song_name[1] = RsBuf[3];
+ 188   1        v_song_name[2] = RsBuf[4];
+ 189   1        v_song_name[3] = RsBuf[5];
+ 190   1        v_song_name[4] = RsBuf[6];
+ 191   1        v_song_name[5] = RsBuf[7];
+ 192   1        v_song_name[6] = RsBuf[10];
+ 193   1        v_song_name[7] = RsBuf[11];
+ 194   1        v_song_name[8] = RsBuf[12];
+ 195   1      }
+ 196          /*====================================
+ 197            发送MP3串口指令
+ 198          ====================================*/
+ 199          void MP3Order(uchar *str){
+ 200   1        SendOrder(str);
+ 201   1        DelaySend(0);
+ 202   1      }
+ 203          void playSongSort(uchar sort){
+ 204   1        SendOrder(PlaySongN(sort));
+ 205   1        DelaySend(0);
+ 206   1      }
+ 207          void setSongVoice(uchar sort){
+ 208   1        SendOrder(SetVoiceN(sort));
+ 209   1        DelaySend(0);
+ 210   1      }
+ 211          void setPlayMode(uchar sort){
+ 212   1        SendOrder(SetModeN(sort));
+ 213   1        DelaySend(0);
+ 214   1      }
+ 215          /*====================================
+ 216            发送GPU串口指令
+ 217          ====================================*/
+ 218          void GpuOrder_NoDelay(uchar *str){
+ 219   1        Uart2_SendOrder(str);
+ 220   1      }
+ 221          void GpuOrder(uchar *str){
+ 222   1        Uart2_SendOrder(str);
+ 223   1        WaitGpuDone();
+ 224   1      }
+ 225          void GpuOrder_menuMainSelect(u8 sort){
+ 226   1        Uart2_SendOrder(GpuStr_MenuSelect(sort+0x30));
+ 227   1        WaitGpuDone();
+ 228   1      }
+ 229          void GpuOrder_menuPlaySelect(u8 sort){
+ 230   1        Uart2_SendOrder(GpuStr_MenuPlaySelect(sort));
+ 231   1        WaitGpuDone();
+ 232   1      }
+ 233          void GpuOrder_menuModeSelect(u8 sort){
+ 234   1        Uart2_SendOrder(GpuStr_ModeSelect(sort));
+ 235   1        WaitGpuDone();
+ 236   1      }
+ 237          void GpuOrder_menuSelectSelect(u8 sort){
+ 238   1        Uart2_SendOrder(GpuStr_selectSelect(sort));
+ 239   1        WaitGpuDone();
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 5   
+
+ 240   1      }
+ 241          void GpuOrder_SongNumRepaint(u8 sort){
+ 242   1        Uart2_SendOrder(GpuStr_SongNumRepaint(sort));
+ 243   1        WaitGpuDone();
+ 244   1      }
+ 245          void GpuOrder_menuSelectSongSort(u8 sort){
+ 246   1        Uart2_SendOrder(GpuStr_menuSelectSongSort(sort));
+ 247   1        WaitGpuDone();
+ 248   1      }
+ 249          void GpuOrder_menuConfigRepaint(){
+ 250   1        
+ 251   1        if(select3_ConfMenu==0){
+ 252   2          if(v_SK){
+ 253   3            if(v_IR){
+ 254   4              if(ledMode ==0)
+ 255   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,5,9));
+ 256   4              else if(ledMode == 1)
+ 257   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,5,11));
+ 258   4              else if(ledMode == 2)
+ 259   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,5,13));
+ 260   4            }else{
+ 261   4              if(ledMode ==0)
+ 262   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,5,9));
+ 263   4              else if(ledMode == 1)
+ 264   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,5,11));
+ 265   4              else if(ledMode == 2)
+ 266   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,5,13));
+ 267   4            }
+ 268   3          }else{
+ 269   3            if(v_IR){
+ 270   4              if(ledMode ==0)
+ 271   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,7,9));
+ 272   4              else if(ledMode == 1)
+ 273   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,7,11));
+ 274   4              else if(ledMode == 2)
+ 275   4                Uart2_SendOrder(GpuStr_ConfigSelect(0,7,13));
+ 276   4            }else{
+ 277   4              if(ledMode ==0)
+ 278   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,7,9));
+ 279   4              else if(ledMode == 1)
+ 280   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,7,11));
+ 281   4              else if(ledMode == 2)
+ 282   4                Uart2_SendOrder(GpuStr_ConfigSelect(2,7,13));
+ 283   4            }
+ 284   3          }
+ 285   2        }else if(select3_ConfMenu==1){
+ 286   2          if(v_SK){
+ 287   3            if(v_IR){
+ 288   4              if(ledMode ==0)
+ 289   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,4,9));
+ 290   4              else if(ledMode == 1)
+ 291   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,4,11));
+ 292   4              else if(ledMode == 2)
+ 293   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,4,13));
+ 294   4            }else{
+ 295   4              if(ledMode ==0)
+ 296   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,4,9));
+ 297   4              else if(ledMode == 1)
+ 298   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,4,11));
+ 299   4              else if(ledMode == 2)
+ 300   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,4,13));
+ 301   4            }
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 6   
+
+ 302   3          }else{
+ 303   3            if(v_IR){
+ 304   4              if(ledMode ==0)
+ 305   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,6,9));
+ 306   4              else if(ledMode == 1)
+ 307   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,6,11));
+ 308   4              else if(ledMode == 2)
+ 309   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,6,13));
+ 310   4            }else{
+ 311   4              if(ledMode ==0)
+ 312   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,6,9));
+ 313   4              else if(ledMode == 1)
+ 314   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,6,11));
+ 315   4              else if(ledMode == 2)
+ 316   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,6,13));
+ 317   4            }
+ 318   3          }
+ 319   2        }else if(select3_ConfMenu==2){
+ 320   2          if(v_SK){
+ 321   3            if(v_IR){
+ 322   4              if(ledMode ==0)
+ 323   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,5,8));
+ 324   4              else if(ledMode == 1)
+ 325   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,5,10));
+ 326   4              else if(ledMode == 2)
+ 327   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,5,12));
+ 328   4            }else{
+ 329   4              if(ledMode ==0)
+ 330   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,5,8));
+ 331   4              else if(ledMode == 1)
+ 332   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,5,10));
+ 333   4              else if(ledMode == 2)
+ 334   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,5,12));
+ 335   4            }
+ 336   3          }else{
+ 337   3            if(v_IR){
+ 338   4              if(ledMode ==0)
+ 339   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,7,8));
+ 340   4              else if(ledMode == 1)
+ 341   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,7,10));
+ 342   4              else if(ledMode == 2)
+ 343   4                Uart2_SendOrder(GpuStr_ConfigSelect(1,7,12));
+ 344   4            }else{
+ 345   4              if(ledMode ==0)
+ 346   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,7,8));
+ 347   4              else if(ledMode == 1)
+ 348   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,7,10));
+ 349   4              else if(ledMode == 2)
+ 350   4                Uart2_SendOrder(GpuStr_ConfigSelect(3,7,12));
+ 351   4            }
+ 352   3          }
+ 353   2        }
+ 354   1        
+ 355   1        
+ 356   1        
+ 357   1        
+ 358   1        WaitGpuDone();
+ 359   1      }
+ 360          void GpuOrder_PlayAreaRepaint(u8 sort){
+ 361   1        switch(sort){
+ 362   2          case volR:
+ 363   2            GpuOrder(GpuStr_setVoice());
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 7   
+
+ 364   2            break;
+ 365   2          case ppR:
+ 366   2            if(v_PP)
+ 367   2              GpuOrder("SPG(44);\r\n");
+ 368   2            else
+ 369   2              GpuOrder("SPG(45);\r\n");
+ 370   2            break;
+ 371   2          case PPR:
+ 372   2            if(!v_PP){
+ 373   3              currentSecPaint = 0;
+ 374   3              Update_Setting_Info(msg_current_time);
+ 375   3              MP3Order(pause);
+ 376   3                    
+ 377   3            }else{
+ 378   3              currentSecPaint = 1;
+ 379   3              Update_Setting_Info(msg_current_time);  
+ 380   3              MP3Order(play);
+ 381   3                  
+ 382   3            }
+ 383   2            break;
+ 384   2          case crrSR_nameR:
+ 385   2            GpuOrder(GpuStr_setSortandName());
+ 386   2            break;
+ 387   2          case timeAllR:
+ 388   2            GpuOrder(GpuStr_setTotalSec());
+ 389   2            break;
+ 390   2          case timeCurrentR:
+ 391   2            GpuOrder(GpuStr_setCrrSec());
+ 392   2            break;
+ 393   2          case nextSR:
+ 394   2            v_timeSec_now = 0;  
+ 395   2            GpuOrder_PlayAreaRepaint(ppR);
+ 396   2            Update_songsName();
+ 397   2            Update_Setting_Info(msg_crrSort);
+ 398   2            GpuOrder_PlayAreaRepaint(crrSR_nameR);
+ 399   2          
+ 400   2            Update_Setting_Info(msg_current_time);
+ 401   2            GpuOrder_PlayAreaRepaint(timeCurrentR);
+ 402   2          
+ 403   2            Update_Setting_Info(msg_total_time);
+ 404   2            GpuOrder_PlayAreaRepaint(timeAllR);
+ 405   2            
+ 406   2            
+ 407   2            
+ 408   2                
+ 409   2            break;
+ 410   2          case nextTR:
+ 411   2            GpuOrder_PlayAreaRepaint(timeCurrentR);
+ 412   2            break;
+ 413   2        
+ 414   2        }
+ 415   1      }
+ 416          void GpuOeder_MenuIconRepaint(){
+ 417   1        if(v_silence){
+ 418   2          switch(playMode){
+ 419   3            case 0:
+ 420   3              GpuOrder_NoDelay(GpuStr_MainIconShow(1));
+ 421   3              GpuOrder(GpuStr_MainIconShow(2));
+ 422   3              break;
+ 423   3            case 1:
+ 424   3              GpuOrder_NoDelay(GpuStr_MainIconShow(1));
+ 425   3              GpuOrder(GpuStr_MainIconShow(3));
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 8   
+
+ 426   3              break;
+ 427   3            case 2:
+ 428   3              GpuOrder_NoDelay(GpuStr_MainIconShow(1));
+ 429   3              GpuOrder(GpuStr_MainIconShow(4));
+ 430   3              break;
+ 431   3            case 3:
+ 432   3              GpuOrder_NoDelay(GpuStr_MainIconShow(1));
+ 433   3              GpuOrder(GpuStr_MainIconShow(5));
+ 434   3              break;
+ 435   3          }
+ 436   2        }else{
+ 437   2          switch(playMode){
+ 438   3            case 0:
+ 439   3              GpuOrder_NoDelay(GpuStr_MainIconShow(0));
+ 440   3              GpuOrder(GpuStr_MainIconShow(2));
+ 441   3              break;
+ 442   3            case 1:
+ 443   3              GpuOrder_NoDelay(GpuStr_MainIconShow(0));
+ 444   3              GpuOrder(GpuStr_MainIconShow(3));
+ 445   3              break;
+ 446   3            case 2:
+ 447   3              GpuOrder_NoDelay(GpuStr_MainIconShow(0));
+ 448   3              GpuOrder(GpuStr_MainIconShow(4));
+ 449   3              break;
+ 450   3            case 3:
+ 451   3              GpuOrder_NoDelay(GpuStr_MainIconShow(0));
+ 452   3              GpuOrder(GpuStr_MainIconShow(5));
+ 453   3              break;
+ 454   3          }
+ 455   2        }
+ 456   1      }
+ 457          void shakeProcess(){
+ 458   1        EX1 = 0;
+ 459   1        if(menuMode == menu_play){
+ 460   2          v_PP = 1;
+ 461   2          MP3Order(CH_Plus);
+ 462   2          GpuOrder_PlayAreaRepaint(nextSR);
+ 463   2        }
+ 464   1        EX1 = 1;
+ 465   1      }
+ 466          
+ 467          void reachEndProcess(){
+ 468   1        if(playMode == 0){
+ 469   2          if(menuMode == menu_play){
+ 470   3            playReachEnd2 = 1;
+ 471   3            v_PP = 0;
+ 472   3            GpuOrder_menuPlaySelect(select8_playMenu);
+ 473   3            GpuOrder_PlayAreaRepaint(PPR);
+ 474   3            GpuOrder_PlayAreaRepaint(ppR);
+ 475   3          }else{
+ 476   3            v_PP = 0;
+ 477   3            playReachEnd2 = 1;
+ 478   3          }
+ 479   2        }else if(playMode==1 ||playMode==2 ||playMode==3  ){
+ 480   2          v_PP = 1;
+ 481   2          if(menuMode == menu_play)
+ 482   2            GpuOrder_PlayAreaRepaint(nextSR);
+ 483   2        }
+ 484   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.54   OPERATION                                                             12/28/2020 22:36:27 PAGE 9   
+
+   CODE SIZE        =   1839    ----
+   CONSTANT SIZE    =     22    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

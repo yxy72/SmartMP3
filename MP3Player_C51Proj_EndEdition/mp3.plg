@@ -1,0 +1,50 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+D:\0_大学生涯资料总文件夹\竞赛、设计总备份\2020萌芽杯\C51Proj\mp3.uvproj
+Project File Date:  11/30/2020
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_INIT?MAIN
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?KEYSCAN?MAIN
+Program Size: data=19.0 xdata=150 code=820
+creating hex file from "mp3"...
+"mp3" - 0 Error(s), 2 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(271): error C141: syntax error near '/'
+Target not created
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?UART_INIT?MAIN
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?KEYSCAN?MAIN
+Program Size: data=19.0 xdata=150 code=820
+creating hex file from "mp3"...
+"mp3" - 0 Error(s), 2 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+linking...
+Program Size: data=19.0 xdata=150 code=936
+creating hex file from "mp3"...
+"mp3" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+linking...
+Program Size: data=19.0 xdata=150 code=936
+creating hex file from "mp3"...
+"mp3" - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+linking...
+Program Size: data=19.0 xdata=150 code=936
+creating hex file from "mp3"...
+"mp3" - 0 Error(s), 0 Warning(s).

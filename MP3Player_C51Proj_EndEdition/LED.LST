@@ -1,0 +1,272 @@
+C51 COMPILER V9.54   LED                                                                   12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE LED
+OBJECT MODULE PLACED IN LED.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE LED.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
+                    -TABS(2)
+
+line level    source
+
+   1          /*=============LED.c=================
+   2            全彩/呼吸灯生成、主时间中断
+   3          ====================================*/
+   4          #include <STC12C5A60S2.h>
+   5          #include "LED.h"
+   6          #include "value.h"
+   7          #define value1 (11059pTimeOverL/12/PWMTOver)
+   8          bit lightOn = 1;
+   9          #define u8 unsigned char
+  10          
+  11          unsigned int mainTime = 0;
+  12          unsigned int value;
+  13          unsigned int i8 = 0;
+  14          unsigned int shakeCNT = 0;
+  15          u8 pwmSort = 0;
+  16          u8 pwmTime = 0,flag = 1;
+  17          u8 PWM_T = 0;   //占空比控制变
+  18          u8 CrrLedMode;
+  19          u8 redOnPause;
+  20          u8 powerOn = 1,powerOff,pinOn,pinOff;//便于共阴共阳LED切换使用 powerOn = [0共阴/1共阳]
+  21          u8 pTimeOver = 200,PWMTOver = 75;
+  22          
+  23          unsigned char RG=1,GB=0,BR=0;
+  24          void shining();
+  25          void breath();
+  26          
+  27          
+  28          void Init_PWM()         //  PWM功能的初始化
+  29          {
+  30   1        CCON = 0;
+  31   1        CL = 0;
+  32   1        CH = 0;
+  33   1        CMOD = 0X00;
+  34   1        value = 72;//5MS  46080 50MS  72=0.078125ms  
+  35   1        CCAP1L = value;
+  36   1        CCAP1H = value>>8;
+  37   1        value +=72;
+  38   1        CCAPM1 = 0x49;
+  39   1        CR = 1;
+  40   1        mainTime=0;
+  41   1        
+  42   1        PPCA = 1; //IP寄存器^7
+  43   1        IPH |= 0x80;  //设置IPH寄存器和IP寄存器使得PCA中断成为【最高优先级】（呼吸灯给爷 永！远！不！断！）
+  44   1        
+  45   1        CrrLedMode = ledMode;
+  46   1        
+  47   1        redOnPause = !v_PP;
+  48   1        
+  49   1        
+  50   1        
+  51   1        powerOff = !powerOn;
+  52   1        pinOn = !powerOn;
+  53   1        pinOff = !pinOn;
+  54   1        
+C51 COMPILER V9.54   LED                                                                   12/28/2020 22:36:27 PAGE 2   
+
+  55   1        LED_Power = powerOn; LED_R = pinOn; LED_B = LED_G = pinOff;
+  56   1        
+  57   1      } 
+  58           
+  59          void MAIN_TIME() interrupt 7{ //全局主要时间中断
+  60   1        CCF1 = 0;
+  61   1        CCAP1L = value;
+  62   1        CCAP1H = value>>8;
+  63   1        value+=72;
+  64   1        
+  65   1      
+  66   1        
+  67   1        //进度条处理
+  68   1        if(v_PP){
+  69   2          mainTime++;
+  70   2          if(mainTime==12800){ //0.078125*12800=1S
+  71   3            mainTime = 0;
+  72   3            if(v_timeSec_now != v_timeSec_total)
+  73   3                v_timeSec_now++;
+  74   3              else{
+  75   4                playReachEnd1 = 1;
+  76   4                
+  77   4              }
+  78   3              currentSecPaint = 1;
+  79   3          }
+  80   2        }
+  81   1        
+  82   1        //给爷振慢点！
+  83   1        if(hasShaken){
+  84   2          shakeCNT++;
+  85   2          if(shakeCNT == 25600+6400){
+  86   3            shakeCNT = 0;
+  87   3            hasShaken = 0;
+  88   3            canShake = 1;
+  89   3          }
+  90   2        }
+  91   1        
+  92   1        //LED处理
+  93   1        if(CrrLedMode == ledMode){
+  94   2          if(CrrLedMode == 1){
+  95   3            if(redOnPause != (!v_PP)){
+  96   4              redOnPause = !v_PP;
+  97   4              if(redOnPause){
+  98   5                LED_R = pinOn;LED_G = pinOff;
+  99   5              }else
+ 100   4                LED_R = pinOff;
+ 101   4            }
+ 102   3            if(!redOnPause)
+ 103   3              breath();
+ 104   3          }else if(CrrLedMode == 2){
+ 105   3            if(redOnPause != (!v_PP)){
+ 106   4              redOnPause = !v_PP;
+ 107   4              if(!v_PP){
+ 108   5                LED_G = LED_B = pinOff; LED_R = pinOn;
+ 109   5              }
+ 110   4            }
+ 111   3            if(!redOnPause)
+ 112   3              shining();
+ 113   3            else{
+ 114   4              LED_G = LED_B = pinOff; LED_R  = pinOn;
+ 115   4            }
+ 116   3          }
+C51 COMPILER V9.54   LED                                                                   12/28/2020 22:36:27 PAGE 3   
+
+ 117   2        }else if(CrrLedMode != ledMode){
+ 118   2          CrrLedMode = ledMode;
+ 119   2          if(CrrLedMode == 0){
+ 120   3            LED_Power = powerOff ; LED_R = LED_G = LED_B = pinOff;
+ 121   3          }else if(CrrLedMode == 1){
+ 122   3            pwmTime = 0;flag = 1;
+ 123   3            PWM_T = 0; 
+ 124   3            LED_Power = powerOn ;
+ 125   3            if(!v_PP){
+ 126   4              LED_G = LED_B = pinOff;LED_R = pinOn;
+ 127   4            }
+ 128   3          }else if(CrrLedMode == 2){
+ 129   3            LED_Power = powerOn; 
+ 130   3            pwmTime = 0;flag = 1;
+ 131   3            PWM_T = 0;
+ 132   3            RG = 1;GB = 0;BR = 0;
+ 133   3          }
+ 134   2        }
+ 135   1        
+ 136   1        
+ 137   1        
+ 138   1        
+ 139   1      
+ 140   1        
+ 141   1      }
+ 142          
+ 143          void shining(){
+ 144   1          if(RG){
+ 145   2            pwmTime++;                //每次定时器溢出加1
+ 146   2            if(pwmTime==pTimeOver){         //PWM周期 PWMTOver个单位
+ 147   3              pwmTime=0;              //使t=0，开始新的PWM周期
+ 148   3              LED_R = 1 ;   //输出端口
+ 149   3              LED_G = 0;
+ 150   3              
+ 151   3              if(flag)
+ 152   3                PWM_T++;
+ 153   3              else
+ 154   3                PWM_T--;
+ 155   3              if(PWM_T==pTimeOver){
+ 156   4                 pwmTime = 0;flag = 1;
+ 157   4                 PWM_T = 0;   //占空比控制变
+ 158   4                  RG = 0;GB = 1;
+ 159   4                  return;
+ 160   4                
+ 161   4              }
+ 162   3              else if(PWM_T == 1)
+ 163   3                flag = 1;
+ 164   3            }
+ 165   2            if(pwmTime == PWM_T){        //按照当前占空比切换输出为高电平 
+ 166   3                LED_R = 0 ;   //输出端口
+ 167   3                LED_G = 1;
+ 168   3            } 
+ 169   2          }else if(GB){
+ 170   2            pwmTime++;                //每次定时器溢出加1
+ 171   2            if(pwmTime==pTimeOver){         //PWM周期 PWMTOver个单位
+ 172   3              pwmTime=0;              //使t=0，开始新的PWM周期
+ 173   3              LED_G = 1 ;   //输出端口
+ 174   3              LED_B = 0;
+ 175   3              
+ 176   3              if(flag)
+ 177   3                PWM_T++;
+ 178   3              else
+C51 COMPILER V9.54   LED                                                                   12/28/2020 22:36:27 PAGE 4   
+
+ 179   3                PWM_T--;
+ 180   3              if(PWM_T==pTimeOver){
+ 181   4                 pwmTime = 0;flag = 1;
+ 182   4                 PWM_T = 0;   //占空比控制变
+ 183   4                  GB = 0;BR = 1;
+ 184   4                  return;
+ 185   4                
+ 186   4              }
+ 187   3              else if(PWM_T == 1)
+ 188   3                flag = 1;
+ 189   3            }
+ 190   2            if(pwmTime == PWM_T){        //按照当前占空比切换输出为高电平 
+ 191   3                LED_G = 0 ;   //输出端口
+ 192   3                LED_B = 1;
+ 193   3            } 
+ 194   2          }else if(BR){
+ 195   2            pwmTime++;                //每次定时器溢出加1
+ 196   2            if(pwmTime==pTimeOver){         //PWM周期 PWMTOver个单位
+ 197   3              pwmTime=0;              //使t=0，开始新的PWM周期
+ 198   3              LED_B = 1 ;   //输出端口
+ 199   3              LED_R = 0;
+ 200   3              
+ 201   3              if(flag)
+ 202   3                PWM_T++;
+ 203   3              else
+ 204   3                PWM_T--;
+ 205   3              if(PWM_T==pTimeOver){
+ 206   4                 pwmTime = 0;flag = 1;
+ 207   4                 PWM_T = 0;   //占空比控制变
+ 208   4                  BR = 0;RG = 1;
+ 209   4                  return;
+ 210   4                
+ 211   4              }
+ 212   3              else if(PWM_T == 1)
+ 213   3                flag = 1;
+ 214   3            }
+ 215   2            if(pwmTime == PWM_T){        //按照当前占空比切换输出为高电平 
+ 216   3                LED_B = 0 ;   //输出端口
+ 217   3                LED_R = 1;
+ 218   3            } 
+ 219   2          }    
+ 220   1      }
+ 221          
+ 222          void breath(){
+ 223   1        pwmTime++;                //每次定时器溢出加1
+ 224   1        if(pwmTime==pTimeOver){         //PWM周期 PWMTOver个单位
+ 225   2          pwmTime=0;              //使t=0，开始新的PWM周期
+ 226   2          LED_G = 1 ;   //输出端口
+ 227   2              
+ 228   2          if(flag)
+ 229   2            PWM_T++;
+ 230   2          else
+ 231   2            PWM_T--;
+ 232   2          if(PWM_T==pTimeOver)
+ 233   2            flag = 0;
+ 234   2          else if(PWM_T == PWMTOver)
+ 235   2            flag = 1;
+ 236   2        }
+ 237   1        if(pwmTime == PWM_T){        //按照当前占空比切换输出为高电平 
+ 238   2          LED_G = 0 ;   //输出端口
+ 239   2        } 
+ 240   1      }
+C51 COMPILER V9.54   LED                                                                   12/28/2020 22:36:27 PAGE 5   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1071    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     23    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

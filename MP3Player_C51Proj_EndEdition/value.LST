@@ -1,0 +1,74 @@
+C51 COMPILER V9.54   VALUE                                                                 12/28/2020 22:36:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE VALUE
+OBJECT MODULE PLACED IN value.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE value.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          /*=============value.c================
+   2            ´æ·ÅÈ«¾Ö±äÁ¿
+   3          ====================================*/
+   4          #include "value.h"
+   5          
+   6          u8 menuMode = 0;
+   7          u8 IR_Option = 0; //21¸öºìÍâ¼üÅÌ IRKEY1 - IRKEY21
+   8          u8 Key_Option = 0;
+   9          u8 select3 = 0;//²Ù×÷Î»Ñ¡
+  10          u8 select2 = 0;//ÐòºÅÎ»Ñ¡
+  11          u8 songSort = 1;
+  12          u8 currentTimePaint = 0;
+  13          u8 currentSecPaint = 0;
+  14          u8 IRDone = 0;
+  15          u8 keyDone = 0;
+  16          u8 tempVoice = 0;
+  17          u8 IRProcessOK = 1;
+  18          u8 KeyProcessOK = 1;
+  19          u8 playMode = 1;
+  20          u8 ledMode = 1;//0ÃðµÆ1ºôÎüµÆ2È«²Ê½¥±ä
+  21          u8 shakeNext = 0;
+  22          u8 RsPoint = 0;
+  23          u8 select6_mainMenu=0;
+  24          u8 select8_playMenu=0;
+  25          u8 select4_modeMenu=0;
+  26          u8 select3_ConfMenu=0;
+  27          u8 select2_SelectMenu=0;
+  28          u8 pwmVal[15]={16,32,48,64,80,96,112,128,144,160,176,192,208,224,240};   //  CCAP1HÖµµÄ·ÖÅä£¬ÎªÁËÊµÏÖ²»Í¬µ
+             -ÄÕ¼¿Õ±È
+  29          
+  30          u8 playReachEnd1 = 0;
+  31          u8 playReachEnd2 = 0;
+  32          
+  33          u8 canShake = 1;    //v_SK¿ªÆôºó£¬ÄÜÇÐ¸è
+  34          u8 hasShaken = 0; //v_SK¿ªÆôºó£¬ÇÐ¸è¶¯×÷ÒÑÖ´ÐÐ
+  35          
+  36          
+  37          unsigned short v_timeSec_now = 0;
+  38          unsigned short v_timeSec_total = 600;
+  39          unsigned char v_PP = 0;//0Í£Ö¹1²¥·ÅÖÐ
+  40          unsigned char v_song_volume = 12;//0-30
+  41          unsigned char v_song_name[9];
+  42          unsigned char v_IR = 1;
+  43          unsigned char v_SK = 1;
+  44          unsigned char v_songs_total;
+  45          unsigned char v_silence = 0;
+  46          unsigned char xdata RsBuf[RsBuf_N] = "--------------";  //¶¨Òå´®¿Ú½ÓÊÕÊý¾Ý»º³åÇø
+  47          unsigned char v_Crrsort=0;
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    211    ----
+C51 COMPILER V9.54   VALUE                                                                 12/28/2020 22:36:26 PAGE 2   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

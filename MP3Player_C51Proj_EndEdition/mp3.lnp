@@ -1,0 +1,13 @@
+"main.obj",
+"value.obj",
+"shake.obj",
+"operation.obj",
+"IR.obj",
+"delay.obj",
+"mp3Order.obj",
+"GpuUI.obj",
+"gpuOrder.obj",
+"Uart.obj",
+"LED.obj" 
+TO "mp3" 
+RAMSIZE(256) 

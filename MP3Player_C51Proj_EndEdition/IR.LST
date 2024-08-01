@@ -1,0 +1,145 @@
+C51 COMPILER V9.54   IR                                                                    12/28/2020 22:36:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE IR
+OBJECT MODULE PLACED IN IR.OBJ
+COMPILER INVOKED BY: D:\Program Files SSD\Keil5\C51\BIN\C51.EXE IR.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND T
+                    -ABS(2)
+
+line level    source
+
+   1          /*==============IR.c=================
+   2            红外接收处理，外部中断0
+   3          ====================================*/
+   4          #include "STC12C5A60S2.h"
+   5          #include "IR.h"
+   6          #include "value.h"
+   7          #define uchar unsigned char
+   8          #define uint unsigned int //类型转义
+   9          bit irok;
+  10          //bit lightOn = 1;
+  11          //uchar pwmSort = 0;
+  12          uchar IRcord[4];
+  13          uchar irdata[33];
+  14          uchar irtime; //红外用全局变量
+  15          uint i7 = 0;
+  16          //uint i8 = 0;
+  17          void Ir_work(void)//红外键值散转程序
+  18          {   
+  19   1          switch(IRcord[2]){    //判断按键键码值
+  20   2          case 0x16:IR_Option = irPP;break;     
+  21   2          case 0x18:IR_Option = irUp; break;    
+  22   2          case 0x08:IR_Option = irLeft; break;   
+  23   2          case 0x1C:IR_Option = irOK; break;    
+  24   2          case 0x5A:IR_Option = irRight; break;   
+  25   2          case 0x52:IR_Option = irdown; break;    
+  26   2          case 0x07:IR_Option = num7;   break;  
+  27   2          case 0x15:IR_Option = num8; break;  
+  28   2          case 0x09:IR_Option = num9;     break;  
+  29   2          case 0x44:IR_Option = num4; break;  
+  30   2          case 0x40:IR_Option = num5;break;                       
+  31   2          case 0x43:IR_Option = num6;break; 
+  32   2          case 0x45:IR_Option = num1;   break;  
+  33   2          case 0x46:IR_Option = num2;       break;  
+  34   2          case 0x47:IR_Option = num3; break;
+  35   2          case 0x19:IR_Option = num0;break; 
+  36   2          case 0x0D:IR_Option = irReturn;break; 
+  37   2          default :break; 
+  38   2          }
+  39   1          delay(1); 
+  40   1          IRDone = 1;
+  41   1      }
+  42          void Ircordpro(void)//红外码值处理函数
+  43          { 
+  44   1        uchar i, j, k,cord,value;
+  45   1        k=1;
+  46   1        for(i=0;i<4;i++) {      //处理4个字节
+  47   2          for(j=1;j<=8;j++) {   //处理1个字节8位
+  48   3            cord=irdata[k];
+  49   3            if(cord>7)      //大于某值为1，这个和晶振有绝对关系，这里使用12M计算，此值可以有一定误差
+  50   3            value=value|0x80;
+  51   3            if(j<8) {
+  52   4              value>>=1;
+  53   4            }
+  54   3            k++;
+C51 COMPILER V9.54   IR                                                                    12/28/2020 22:36:27 PAGE 2   
+
+  55   3          }
+  56   2          IRcord[i]=value;
+  57   2          value=0;     
+  58   2        } 
+  59   1        Ir_work();
+  60   1      }
+  61          
+  62          void delay(uint z)    //@11.0592MHz
+  63          {
+  64   1        uchar i, j;
+  65   1        i = 11,j = 190;
+  66   1        while(z--) {
+  67   2          do {
+  68   3            while (--j);
+  69   3          } while (--i);
+  70   2        }
+  71   1      }
+  72          
+  73          //定时器0
+  74          void IRInit() {
+  75   1      
+  76   1        IT0 = 1;          //指定外部中断0下降沿触发，INT0 (P3.2)
+  77   1        EX0 = 1;          //使能外部中断
+  78   1        //定时器0 对应interrupt 1
+  79   1        TMOD|=0x02;         //定时器0工作方式2，TH0是重装值，TL0是初值  
+  80   1        TH0=0x00;TL0=0x00;      //初始化值  
+  81   1        ET0=1;            //定时器0中断打开
+  82   1        TR0=1;            //定时器0开关打开
+  83   1      
+  84   1      }
+  85          void EX0_ISR (void) interrupt 0 //外部中断0服务函数
+  86          {
+  87   1        static uchar i;             //接收红外信号处理
+  88   1        static bit startflag;       //是否开始处理标志位
+  89   1      if(!v_IR)
+  90   1        return;
+  91   1      if(!IRProcessOK)
+  92   1        return;
+  93   1        if(startflag) {                        
+  94   2          if(irtime<63&&irtime>=33) { //引导码 TC9012的头码，9ms+4.5ms
+  95   3                  i=0;
+  96   3          }
+  97   2          irdata[i]=irtime;//存储每个电平的持续时间，用于以后判断是0还是1
+  98   2          irtime=0;
+  99   2          i++;
+ 100   2          if(i==33) {
+ 101   3              irok=1;i=0;
+ 102   3            Ircordpro();
+ 103   3            irok=0;
+ 104   3            }
+ 105   2        } else {
+ 106   2          irtime=0;
+ 107   2          startflag=1;
+ 108   2        }
+ 109   1      }
+ 110          
+ 111          void time0() interrupt 1
+ 112          {
+ 113   1        TR0=0;
+ 114   1        irtime++;  //人家说什么红外中断计时里不能加东西，不然影响红外，确实。所以把原本执行的语句弄到PCA定时器（L
+             -ED.c）去了。
+ 115   1        TR0=1;   
+C51 COMPILER V9.54   IR                                                                    12/28/2020 22:36:27 PAGE 3   
+
+ 116   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    489    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     41       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
